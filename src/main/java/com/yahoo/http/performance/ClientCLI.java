@@ -3,10 +3,7 @@
 
 package com.yahoo.http.performance;
 
-import com.yahoo.http.performance.request.GetRequest;
-import com.yahoo.http.performance.request.PostRequest;
-import com.yahoo.http.performance.request.Request;
-import com.yahoo.http.performance.request.RequestType;
+import com.yahoo.http.performance.request.*;
 import com.yahoo.http.performance.validation.JsonSubsetValidation;
 import com.yahoo.http.performance.validation.ResponseCodeValidation;
 import com.yahoo.http.performance.validation.Validation;
@@ -51,7 +48,11 @@ public class ClientCLI {
             validations.add(new JsonSubsetValidation(jsonString));
         }
 
-        long requestDelay = (Long) argMap.get("requestDelay");
+        Object requestDelayString = argMap.get("requestDelay");
+        if (requestDelayString == null) {
+            requestDelayString = ".";
+        }
+        RequestDelay requestDelay = RequestDelay.parseInput((String) requestDelayString);
 
         List<ClientThread> clientThreads = new ArrayList();
 
@@ -152,7 +153,7 @@ public class ClientCLI {
         argMap.put("dataPath", cmd.getOptionValue("dataPath"));
         argMap.put("responseCodeValidation", cmd.hasOption("responseCodeValidation"));
         argMap.put("jsonSubsetValidation", cmd.getOptionValue("jsonSubsetValidation"));
-        argMap.put("requestDelay", Long.valueOf(cmd.getOptionValue("requestDelay")));
+        argMap.put("requestDelay", cmd.getOptionValue("requestDelay"));
 
         return argMap;
     }
