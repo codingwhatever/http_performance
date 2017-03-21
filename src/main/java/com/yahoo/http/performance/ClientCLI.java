@@ -48,11 +48,7 @@ public class ClientCLI {
             validations.add(new JsonSubsetValidation(jsonString));
         }
 
-        Object requestDelayString = argMap.get("requestDelay");
-        if (requestDelayString == null) {
-            requestDelayString = ".";
-        }
-        RequestDelay requestDelay = RequestDelay.parseInput((String) requestDelayString);
+        RequestDelay requestDelay = (RequestDelay) argMap.get("requestDelay");
 
         List<ClientThread> clientThreads = new ArrayList();
 
@@ -116,7 +112,8 @@ public class ClientCLI {
         Option responseCodeValidation = new Option("r", "responseCodeValidation", false, "Check that all requests give 200 response.");
         Option jsonSubsetValidation = new Option("j", "jsonSubsetValidation", true, "Check that the given json map is a subset" +
                 "of the response json. This assumes that the arg file and the response are single level json maps.");
-        Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request.");
+        Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request. Format: [milli-seconds].[nano-seconds]; " +
+                "examples: 123, .123, 1234.567, 123.");
 
         numThreads.setRequired(true);
         numRequests.setRequired(true);
@@ -140,9 +137,23 @@ public class ClientCLI {
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
-            System.out.println(e.getMessage());
+            System.err.println(e.getMessage());
             helpFormatter.printHelp("http-performance-client", options);
 
+            System.exit(1);
+        }
+
+        RequestDelay requestDelayObject = null;
+        String requestDelayString = cmd.getOptionValue("requestDelay");
+        if (requestDelayString == null) {
+            requestDelayString = "0.0";
+        }
+
+        try {
+            requestDelayObject = RequestDelay.parseInput(requestDelayString);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            helpFormatter.printHelp("http-performance-client", options);
             System.exit(1);
         }
 
@@ -153,7 +164,7 @@ public class ClientCLI {
         argMap.put("dataPath", cmd.getOptionValue("dataPath"));
         argMap.put("responseCodeValidation", cmd.hasOption("responseCodeValidation"));
         argMap.put("jsonSubsetValidation", cmd.getOptionValue("jsonSubsetValidation"));
-        argMap.put("requestDelay", cmd.getOptionValue("requestDelay"));
+        argMap.put("requestDelay", requestDelayObject);
 
         return argMap;
     }
