@@ -32,9 +32,9 @@ public class RequestDelay {
         if (millisString.length() != 0) {
             milliValue = Long.valueOf(millisString);
         }
-        if (nanosString.length() > 0 && nanosString.length() <= 3) {
+        if (nanosString.length() > 0 && nanosString.length() <= 6) {
             nanosValue = Integer.valueOf(nanosString);
-        } else if (nanosString.length() > 3) {
+        } else if (nanosString.length() > 6) {
             throw new IOException("Invalid request delay: " + delay);
         }
         return new RequestDelay(milliValue, nanosValue);

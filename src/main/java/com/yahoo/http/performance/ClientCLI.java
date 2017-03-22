@@ -113,7 +113,7 @@ public class ClientCLI {
         Option jsonSubsetValidation = new Option("j", "jsonSubsetValidation", true, "Check that the given json map is a subset" +
                 "of the response json. This assumes that the arg file and the response are single level json maps.");
         Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request. Format: [milli-seconds].[nano-seconds]; " +
-                "examples: 123, .123, 1234.567, 123.");
+                "examples: 123, .123456, 1234.567000, 123.");
 
         numThreads.setRequired(true);
         numRequests.setRequired(true);
