@@ -3,10 +3,7 @@
 
 package com.yahoo.http.performance;
 
-import com.yahoo.http.performance.request.GetRequest;
-import com.yahoo.http.performance.request.PostRequest;
-import com.yahoo.http.performance.request.Request;
-import com.yahoo.http.performance.request.RequestType;
+import com.yahoo.http.performance.request.*;
 import com.yahoo.http.performance.validation.JsonSubsetValidation;
 import com.yahoo.http.performance.validation.ResponseCodeValidation;
 import com.yahoo.http.performance.validation.Validation;
@@ -51,7 +48,7 @@ public class ClientCLI {
             validations.add(new JsonSubsetValidation(jsonString));
         }
 
-        long requestDelay = (Long) argMap.get("requestDelay");
+        long requestDelay = (long) argMap.get("requestDelay");
 
         List<ClientThread> clientThreads = new ArrayList();
 
@@ -115,7 +112,8 @@ public class ClientCLI {
         Option responseCodeValidation = new Option("r", "responseCodeValidation", false, "Check that all requests give 200 response.");
         Option jsonSubsetValidation = new Option("j", "jsonSubsetValidation", true, "Check that the given json map is a subset" +
                 "of the response json. This assumes that the arg file and the response are single level json maps.");
-        Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request.");
+        Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request in nanoseconds. The code will busy wait " +
+                "instead of sleep inorder to allow smaller delays than 1ms.");
 
         numThreads.setRequired(true);
         numRequests.setRequired(true);
@@ -139,7 +137,7 @@ public class ClientCLI {
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
-            System.out.println(e.getMessage());
+            System.err.println(e.getMessage());
             helpFormatter.printHelp("http-performance-client", options);
 
             System.exit(1);

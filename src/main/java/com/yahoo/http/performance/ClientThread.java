@@ -48,7 +48,9 @@ public class ClientThread implements Runnable {
 
         for (int i = 0; i < requestCount; i++) {
             try {
-                Thread.sleep(requestDelay);
+
+                long currentTime = System.nanoTime();
+                while (currentTime + requestDelay > System.nanoTime());
                 Request request = requests.get(i % requests.size());
                 long start = System.nanoTime();
                 CloseableHttpResponse response = request.makeRequest(httpClient);
@@ -72,7 +74,7 @@ public class ClientThread implements Runnable {
                 } finally {
                     response.close();
                 }
-            } catch (IOException|InterruptedException e) {
+            } catch (IOException e) {
                 failedRequest++;
             }
         }
