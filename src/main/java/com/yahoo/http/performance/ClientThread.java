@@ -4,7 +4,6 @@
 package com.yahoo.http.performance;
 
 import com.yahoo.http.performance.request.Request;
-import com.yahoo.http.performance.request.RequestDelay;
 import com.yahoo.http.performance.validation.Validation;
 
 import org.apache.http.HttpEntity;
@@ -28,14 +27,14 @@ public class ClientThread implements Runnable {
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
     private final List<Request> requests;
     private final List<Validation> validations;
-    private final RequestDelay requestDelay;
+    private final long requestDelay;
 
     private long runTime = 0;
     private long failedRequest = 0;
     private long requestCount;
     private long[] latencies;
 
-    public ClientThread(int requestCount, List<Request> requests, List<Validation> validations, RequestDelay requestDelay) {
+    public ClientThread(int requestCount, List<Request> requests, List<Validation> validations, long requestDelay) {
         this.requestCount = requestCount;
         this.requests = requests;
         this.validations = validations;
@@ -49,7 +48,9 @@ public class ClientThread implements Runnable {
 
         for (int i = 0; i < requestCount; i++) {
             try {
-                Thread.sleep(requestDelay.getMillis(), requestDelay.getNanos());
+
+                long currentTime = System.nanoTime();
+                while (currentTime + requestDelay > System.nanoTime());
                 Request request = requests.get(i % requests.size());
                 long start = System.nanoTime();
                 CloseableHttpResponse response = request.makeRequest(httpClient);
@@ -73,7 +74,7 @@ public class ClientThread implements Runnable {
                 } finally {
                     response.close();
                 }
-            } catch (IOException|InterruptedException e) {
+            } catch (IOException e) {
                 failedRequest++;
             }
         }
@@ -104,7 +105,7 @@ public class ClientThread implements Runnable {
         return failedRequest;
     }
 
-    public RequestDelay getRequestDelay() {
+    public long getRequestDelay() {
         return requestDelay;
     }
 }

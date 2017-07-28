@@ -48,7 +48,7 @@ public class ClientCLI {
             validations.add(new JsonSubsetValidation(jsonString));
         }
 
-        RequestDelay requestDelay = (RequestDelay) argMap.get("requestDelay");
+        long requestDelay = (long) argMap.get("requestDelay");
 
         List<ClientThread> clientThreads = new ArrayList();
 
@@ -112,8 +112,8 @@ public class ClientCLI {
         Option responseCodeValidation = new Option("r", "responseCodeValidation", false, "Check that all requests give 200 response.");
         Option jsonSubsetValidation = new Option("j", "jsonSubsetValidation", true, "Check that the given json map is a subset" +
                 "of the response json. This assumes that the arg file and the response are single level json maps.");
-        Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request. Format: [milli-seconds].[nano-seconds]; " +
-                "examples: 123, .123456, 1234.567000, 123.");
+        Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request in nanoseconds. The code will busy wait " +
+                "instead of sleep inorder to allow smaller delays than 1ms.");
 
         numThreads.setRequired(true);
         numRequests.setRequired(true);
@@ -143,20 +143,6 @@ public class ClientCLI {
             System.exit(1);
         }
 
-        RequestDelay requestDelayObject = null;
-        String requestDelayString = cmd.getOptionValue("requestDelay");
-        if (requestDelayString == null) {
-            requestDelayString = "0.0";
-        }
-
-        try {
-            requestDelayObject = RequestDelay.parseInput(requestDelayString);
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            helpFormatter.printHelp("http-performance-client", options);
-            System.exit(1);
-        }
-
         argMap.put("threads", Integer.valueOf(cmd.getOptionValue("threads")));
         argMap.put("count", Integer.valueOf(cmd.getOptionValue("count")));
         argMap.put("url", cmd.getOptionValue("url"));
@@ -164,7 +150,7 @@ public class ClientCLI {
         argMap.put("dataPath", cmd.getOptionValue("dataPath"));
         argMap.put("responseCodeValidation", cmd.hasOption("responseCodeValidation"));
         argMap.put("jsonSubsetValidation", cmd.getOptionValue("jsonSubsetValidation"));
-        argMap.put("requestDelay", requestDelayObject);
+        argMap.put("requestDelay", Long.valueOf(cmd.getOptionValue("requestDelay")));
 
         return argMap;
     }

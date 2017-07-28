@@ -17,14 +17,14 @@ public class Metrics {
     private long totalTestTime;
     private long totalFailedRequests;
     private long requestsPerSecond;
-    private String requestDelay;
+    private long requestDelay;
     private DescriptiveStatistics statistics = new DescriptiveStatistics();
 
     public Metrics(List<ClientThread> threads) {
         ClientThread firstThread = threads.get(0);
         this.threadCount = threads.size();
         this.requestCountPerThread = firstThread.getRequestCount();
-        this.requestDelay = firstThread.getRequestDelay().getMillis() + "." + firstThread.getRequestDelay().getNanos();
+        this.requestDelay = firstThread.getRequestDelay();
         this.totalRequestCount = threadCount * requestCountPerThread;
 
         this.totalTestTime = threads.stream().map(ClientThread::getRunTime).mapToLong(Long::longValue).sum() / threadCount;
