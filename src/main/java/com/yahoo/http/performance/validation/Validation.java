@@ -3,6 +3,7 @@
 
 package com.yahoo.http.performance.validation;
 
+import com.yahoo.http.performance.request.Request;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 /**
@@ -15,7 +16,7 @@ public abstract class Validation {
         this.name = name;
     }
 
-    public abstract boolean isValid(CloseableHttpResponse response);
+    public abstract boolean isValid(Request request, CloseableHttpResponse response);
 
     public String getName() {
         return name;

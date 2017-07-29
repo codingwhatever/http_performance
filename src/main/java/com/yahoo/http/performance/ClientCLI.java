@@ -4,7 +4,7 @@
 package com.yahoo.http.performance;
 
 import com.yahoo.http.performance.request.*;
-import com.yahoo.http.performance.validation.JsonSubsetValidation;
+import com.yahoo.http.performance.validation.ResponseDataValidation;
 import com.yahoo.http.performance.validation.ResponseCodeValidation;
 import com.yahoo.http.performance.validation.Validation;
 
@@ -17,8 +17,10 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,10 +44,8 @@ public class ClientCLI {
             validations.add(new ResponseCodeValidation());
         }
 
-        if (argMap.get("jsonSubsetValidation") != null) {
-            String jsonFile = (String) argMap.get("jsonSubsetValidation");
-            String jsonString = new String(Files.readAllBytes(new File(jsonFile).toPath()));
-            validations.add(new JsonSubsetValidation(jsonString));
+        if ((boolean)argMap.get("postRequestValidation") || argMap.get("getRequestValidation") != null) {
+            validations.add(new ResponseDataValidation());
         }
 
         long requestDelay = (long) argMap.get("requestDelay");
@@ -84,27 +84,55 @@ public class ClientCLI {
     }
 
     private static List<Request> getRequests(Map<String, Object> argMap) throws IOException {
-        ArrayList<Request> requests = new ArrayList<>();
+        List<Request> requests = new ArrayList<>();
 
-        switch (RequestType.valueOf((String) argMap.get("method"))) {
+        RequestType type = RequestType.valueOf((String) argMap.get("method"));
+        switch (type) {
             case GET:
                 Request request = new GetRequest((String) argMap.get("url"));
                 requests.add(request);
-                return requests;
+                break;
             case POST:
-                return getPostRequests((String) argMap.get("url"), (String) argMap.get("dataPath"), requests);
+                requests = getPostRequests(
+                            (String) argMap.get("url"),
+                            (String) argMap.get("dataPath"),
+                            requests,
+                            (boolean) argMap.get("postRequestValidation")
+                        );
+                break;
             default:
                 throw new IllegalStateException("Invalid method");
         }
+
+        String expectedFilePath = (String) argMap.get("getRequestValidation");
+        if (expectedFilePath != null && type == RequestType.GET) {
+            String expectedResponseData = new String(Files.readAllBytes(new File(expectedFilePath).toPath()));
+            requests.forEach(request -> { request.setExpectedResponseData(expectedResponseData); });
+        } else if (argMap.get("getRequestValidation") != null) {
+            throw new RuntimeException("Invalid use of getRequestValidation argument");
+        }
+
+        return requests;
     }
 
-    private static List<Request> getPostRequests(String url, String dataPath, List<Request> requests) throws IOException {
+    private static List<Request> getPostRequests(String url, String dataPath, List<Request> requests, boolean validationEnabled) throws IOException {
         File path = new File(dataPath);
 
-        File[] files = path.listFiles();
+        File[] files = path.listFiles(new FilenameFilter(){
+            public boolean accept( File dir, String name ) {
+                return ! name.matches( ".*\\.expected$" );
+            }
+        });
         for (File file : files) {
             String data = new String(Files.readAllBytes(file.toPath()));
-            requests.add(new PostRequest(url, data));
+            Request request = new PostRequest(url, data);
+
+            if (validationEnabled) {
+                Path expectedResultPath = new File(file.getPath().concat(".expected")).toPath();
+                request.setExpectedResponseData(new String(Files.readAllBytes(expectedResultPath)));
+            }
+
+            requests.add(request);
         }
 
         return requests;
@@ -120,8 +148,10 @@ public class ClientCLI {
         Option postDataPath = new Option("d", "dataPath", true, "Directory containing file data to be posted. Each file will be " +
                 "posted independently.");
         Option responseCodeValidation = new Option("r", "responseCodeValidation", false, "Check that all requests give 200 response.");
-        Option jsonSubsetValidation = new Option("j", "jsonSubsetValidation", true, "Check that the given json map is a subset" +
-                "of the response json. This assumes that the arg file and the response are single level json maps.");
+        Option getRequestValidation = new Option("g", "getRequestValidation", true, "Only for GET requests: Validate the servers response " +
+                "against some expected string read from the file specified in this arg.");
+        Option postRequestValidation = new Option("p", "postRequestValidation", false, "Only for POST requests: Looks for a file with " +
+                ".expected extension corresponding to each input file from postDataPath arg path.");
         Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request in nanoseconds. The code will busy wait " +
                 "instead of sleep inorder to allow smaller delays than 1ms.");
         Option sslEnabled = new Option("s", "sslEnabled", false, "Enables ssl support with a truststrategy that returns true instead " +
@@ -139,9 +169,10 @@ public class ClientCLI {
         options.addOption(requestType);
         options.addOption(postDataPath);
         options.addOption(responseCodeValidation);
-        options.addOption(jsonSubsetValidation);
+        options.addOption(getRequestValidation);
         options.addOption(requestDelay);
         options.addOption(sslEnabled);
+        options.addOption(postRequestValidation);
 
 
         CommandLineParser parser = new BasicParser();
@@ -163,9 +194,10 @@ public class ClientCLI {
         argMap.put("method", cmd.getOptionValue("method"));
         argMap.put("dataPath", cmd.getOptionValue("dataPath"));
         argMap.put("responseCodeValidation", cmd.hasOption("responseCodeValidation"));
-        argMap.put("jsonSubsetValidation", cmd.getOptionValue("jsonSubsetValidation"));
+        argMap.put("getRequestValidation", cmd.getOptionValue("getRequestValidation"));
         argMap.put("requestDelay", Long.valueOf(cmd.getOptionValue("requestDelay")));
         argMap.put("sslEnabled", cmd.hasOption("sslEnabled"));
+        argMap.put("postRequestValidation", cmd.hasOption("postRequestValidation"));
 
         return argMap;
     }

@@ -79,7 +79,7 @@ public class ClientThread implements Runnable {
                 try {
                     failedValidations.clear();
                     for (Validation v : validations) {
-                        if (!v.isValid(response)) {
+                        if (!v.isValid(request, response)) {
                             failedValidations.add(v.getName());
                         }
                     }
