@@ -8,13 +8,19 @@ import com.yahoo.http.performance.validation.Validation;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +30,7 @@ import java.util.List;
  */
 public class ClientThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ClientThread.class);
-    private final CloseableHttpClient httpClient = HttpClients.createDefault();
+    private final CloseableHttpClient httpClient;
     private final List<Request> requests;
     private final List<Validation> validations;
     private final long requestDelay;
@@ -34,12 +40,22 @@ public class ClientThread implements Runnable {
     private long requestCount;
     private long[] latencies;
 
-    public ClientThread(int requestCount, List<Request> requests, List<Validation> validations, long requestDelay) {
+    public ClientThread(int requestCount, List<Request> requests, List<Validation> validations, long requestDelay)
+            throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
         this.requestCount = requestCount;
         this.requests = requests;
         this.validations = validations;
         this.latencies = new long[(int) requestCount];
         this.requestDelay = requestDelay;
+
+        SSLContext sslContext = new SSLContextBuilder()
+                .loadTrustMaterial(null, (certificate, authType) -> true)
+                .build();
+
+        httpClient = HttpClients.custom()
+                .setSSLContext(sslContext)
+                .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                .build();
     }
 
     public void run() {
@@ -75,6 +91,7 @@ public class ClientThread implements Runnable {
                     response.close();
                 }
             } catch (IOException e) {
+                LOG.error("Request failed", e);
                 failedRequest++;
             }
         }
