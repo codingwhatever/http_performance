@@ -40,7 +40,7 @@ public class ClientThread implements Runnable {
     private long requestCount;
     private long[] latencies;
 
-    public ClientThread(int requestCount, List<Request> requests, List<Validation> validations, long requestDelay)
+    public ClientThread(int requestCount, List<Request> requests, List<Validation> validations, long requestDelay, boolean sslEnabled)
             throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
         this.requestCount = requestCount;
         this.requests = requests;
@@ -48,14 +48,18 @@ public class ClientThread implements Runnable {
         this.latencies = new long[(int) requestCount];
         this.requestDelay = requestDelay;
 
-        SSLContext sslContext = new SSLContextBuilder()
-                .loadTrustMaterial(null, (certificate, authType) -> true)
-                .build();
+        if (sslEnabled) {
+            SSLContext sslContext = new SSLContextBuilder()
+                    .loadTrustMaterial(null, (certificate, authType) -> true)
+                    .build();
 
-        httpClient = HttpClients.custom()
-                .setSSLContext(sslContext)
-                .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                .build();
+            httpClient = HttpClients.custom()
+                    .setSSLContext(sslContext)
+                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                    .build();
+        } else {
+            httpClient = HttpClients.createDefault();
+        }
     }
 
     public void run() {
@@ -64,7 +68,6 @@ public class ClientThread implements Runnable {
 
         for (int i = 0; i < requestCount; i++) {
             try {
-
                 long currentTime = System.nanoTime();
                 while (currentTime + requestDelay > System.nanoTime());
                 Request request = requests.get(i % requests.size());
