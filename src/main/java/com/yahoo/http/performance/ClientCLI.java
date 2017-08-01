@@ -49,11 +49,21 @@ public class ClientCLI {
         }
 
         long requestDelay = (long) argMap.get("requestDelay");
+        int count = (int) argMap.get("count");
+        boolean sslEnabled = (boolean) argMap.get("sslEnabled");
 
         List<ClientThread> clientThreads = new ArrayList();
 
         for (int i = 0; i < (int) argMap.get("threads"); i++) {
-            clientThreads.add(new ClientThread((int) argMap.get("count"), requests, validations, requestDelay));
+            clientThreads.add(
+                    new ClientThread(
+                            count,
+                            requests,
+                            validations,
+                            requestDelay,
+                            sslEnabled
+                    )
+            );
         }
 
         List<Thread> threads = clientThreads.stream().map(t -> new Thread(t)).collect(Collectors.toList());
@@ -114,6 +124,8 @@ public class ClientCLI {
                 "of the response json. This assumes that the arg file and the response are single level json maps.");
         Option requestDelay = new Option("rd", "requestDelay", true, "Delay between each request in nanoseconds. The code will busy wait " +
                 "instead of sleep inorder to allow smaller delays than 1ms.");
+        Option sslEnabled = new Option("s", "sslEnabled", false, "Enables ssl support with a truststrategy that returns true instead " +
+                "of verifying the certificate.");
 
         numThreads.setRequired(true);
         numRequests.setRequired(true);
@@ -129,6 +141,8 @@ public class ClientCLI {
         options.addOption(responseCodeValidation);
         options.addOption(jsonSubsetValidation);
         options.addOption(requestDelay);
+        options.addOption(sslEnabled);
+
 
         CommandLineParser parser = new BasicParser();
         HelpFormatter helpFormatter = new HelpFormatter();
@@ -151,6 +165,7 @@ public class ClientCLI {
         argMap.put("responseCodeValidation", cmd.hasOption("responseCodeValidation"));
         argMap.put("jsonSubsetValidation", cmd.getOptionValue("jsonSubsetValidation"));
         argMap.put("requestDelay", Long.valueOf(cmd.getOptionValue("requestDelay")));
+        argMap.put("sslEnabled", cmd.hasOption("sslEnabled"));
 
         return argMap;
     }
