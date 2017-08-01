@@ -3,7 +3,6 @@
 
 package com.yahoo.http.performance.validation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.http.performance.request.Request;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -19,7 +18,6 @@ import java.nio.charset.StandardCharsets;
  */
 public class ResponseDataValidation extends Validation {
     private static final Logger LOG = LoggerFactory.getLogger(ResponseDataValidation.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public ResponseDataValidation() {
         super(ResponseDataValidation.class.getName());

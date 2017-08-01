@@ -88,7 +88,7 @@ public class ClientThread implements Runnable {
                     EntityUtils.consume(entity);
 
                     if (failedValidations.size() > 0) {
-                        throw new IOException("Request failed");
+                        throw new IOException("Request failed: " + failedValidations);
                     }
                 } finally {
                     response.close();
