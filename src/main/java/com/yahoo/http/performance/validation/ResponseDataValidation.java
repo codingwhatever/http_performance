@@ -16,12 +16,8 @@ import java.nio.charset.StandardCharsets;
 /**
  * Validates that response contains some json map.
  */
-public class ResponseDataValidation extends Validation {
+public class ResponseDataValidation implements Validation {
     private static final Logger LOG = LoggerFactory.getLogger(ResponseDataValidation.class);
-
-    public ResponseDataValidation() {
-        super(ResponseDataValidation.class.getName());
-    }
 
     @Override
     public boolean isValid(final Request request, final CloseableHttpResponse response) {
@@ -35,5 +31,10 @@ public class ResponseDataValidation extends Validation {
         }
 
         return result.equals(request.getExpectedResponseData());
+    }
+
+    @Override
+    public String toString() {
+        return ResponseDataValidation.class.getName();
     }
 }
