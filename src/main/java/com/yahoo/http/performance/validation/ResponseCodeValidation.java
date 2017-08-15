@@ -9,13 +9,14 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 /**
  * A validation that ensures that the response code is 200.
  */
-public class ResponseCodeValidation extends Validation {
-    public ResponseCodeValidation(){
-        super(ResponseCodeValidation.class.getName());
-    }
-
+public class ResponseCodeValidation implements Validation {
     @Override
     public boolean isValid(final Request request, final CloseableHttpResponse response) {
         return response.getStatusLine().getStatusCode() == 200;
+    }
+
+    @Override
+    public String toString() {
+        return ResponseCodeValidation.class.getName();
     }
 }

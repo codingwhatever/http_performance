@@ -3,7 +3,10 @@
 
 package com.yahoo.http.performance;
 
-import com.yahoo.http.performance.request.*;
+import com.yahoo.http.performance.request.GetRequest;
+import com.yahoo.http.performance.request.PostRequest;
+import com.yahoo.http.performance.request.Request;
+import com.yahoo.http.performance.request.RequestType;
 import com.yahoo.http.performance.validation.ResponseDataValidation;
 import com.yahoo.http.performance.validation.ResponseCodeValidation;
 import com.yahoo.http.performance.validation.Validation;
@@ -37,24 +40,24 @@ import java.util.stream.Collectors;
  */
 public class ClientCLI {
     public static void main(String[] args) throws Exception {
-        Map<String, Object> argMap = parseArgs(args);
+        Map<String, String> argMap = parseArgs(args);
         List<Request> requests = getRequests(argMap);
         List<Validation> validations = new ArrayList<>();
-        if ((boolean) argMap.get("responseCodeValidation")) {
+        if (Boolean.valueOf(argMap.get("responseCodeValidation"))) {
             validations.add(new ResponseCodeValidation());
         }
 
-        if ((boolean)argMap.get("postRequestValidation") || argMap.get("getRequestValidation") != null) {
+        if (Boolean.valueOf(argMap.get("postRequestValidation")) || argMap.get("getRequestValidation") != null) {
             validations.add(new ResponseDataValidation());
         }
 
-        long requestDelay = (long) argMap.get("requestDelay");
-        int count = (int) argMap.get("count");
-        boolean sslEnabled = (boolean) argMap.get("sslEnabled");
+        long requestDelay = Long.valueOf(argMap.get("requestDelay"));
+        int count = Integer.valueOf(argMap.get("count"));
+        boolean sslEnabled = Boolean.valueOf(argMap.get("sslEnabled"));
 
         List<ClientThread> clientThreads = new ArrayList();
 
-        for (int i = 0; i < (int) argMap.get("threads"); i++) {
+        for (int i = 0; i < Integer.valueOf(argMap.get("threads")); i++) {
             clientThreads.add(
                     new ClientThread(
                             count,
@@ -83,28 +86,28 @@ public class ClientCLI {
         System.out.print(metrics.toString());
     }
 
-    private static List<Request> getRequests(Map<String, Object> argMap) throws IOException {
+    private static List<Request> getRequests(Map<String, String> argMap) throws IOException {
         List<Request> requests = new ArrayList<>();
 
-        RequestType type = RequestType.valueOf((String) argMap.get("method"));
+        RequestType type = RequestType.valueOf(argMap.get("method"));
         switch (type) {
             case GET:
-                Request request = new GetRequest((String) argMap.get("url"));
+                Request request = new GetRequest(argMap.get("url"));
                 requests.add(request);
                 break;
             case POST:
                 requests = getPostRequests(
-                            (String) argMap.get("url"),
-                            (String) argMap.get("dataPath"),
+                            argMap.get("url"),
+                            argMap.get("dataPath"),
                             requests,
-                            (boolean) argMap.get("postRequestValidation")
+                            Boolean.valueOf(argMap.get("postRequestValidation"))
                         );
                 break;
             default:
                 throw new IllegalStateException("Invalid method");
         }
 
-        String expectedFilePath = (String) argMap.get("getRequestValidation");
+        String expectedFilePath = argMap.get("getRequestValidation");
         if (expectedFilePath != null && type == RequestType.GET) {
             String expectedResponseData = new String(Files.readAllBytes(new File(expectedFilePath).toPath()));
             requests.forEach(request -> { request.setExpectedResponseData(expectedResponseData); });
@@ -138,8 +141,8 @@ public class ClientCLI {
         return requests;
     }
 
-    private static Map<String, Object> parseArgs(String[] args) {
-        Map<String, Object> argMap = new HashMap();
+    private static Map<String, String> parseArgs(String[] args) {
+        Map<String, String> argMap = new HashMap();
 
         Option numThreads = new Option("t", "threads", true, "Number of threads to run.");
         Option numRequests = new Option("c", "count", true, "Number of requests to send per thread.");
@@ -188,16 +191,16 @@ public class ClientCLI {
             System.exit(1);
         }
 
-        argMap.put("threads", Integer.valueOf(cmd.getOptionValue("threads")));
-        argMap.put("count", Integer.valueOf(cmd.getOptionValue("count")));
+        argMap.put("threads", cmd.getOptionValue("threads"));
+        argMap.put("count", cmd.getOptionValue("count"));
         argMap.put("url", cmd.getOptionValue("url"));
         argMap.put("method", cmd.getOptionValue("method"));
         argMap.put("dataPath", cmd.getOptionValue("dataPath"));
-        argMap.put("responseCodeValidation", cmd.hasOption("responseCodeValidation"));
+        argMap.put("responseCodeValidation", String.valueOf(cmd.hasOption("responseCodeValidation")));
         argMap.put("getRequestValidation", cmd.getOptionValue("getRequestValidation"));
-        argMap.put("requestDelay", Long.valueOf(cmd.getOptionValue("requestDelay")));
-        argMap.put("sslEnabled", cmd.hasOption("sslEnabled"));
-        argMap.put("postRequestValidation", cmd.hasOption("postRequestValidation"));
+        argMap.put("requestDelay", cmd.getOptionValue("requestDelay"));
+        argMap.put("sslEnabled", String.valueOf(cmd.hasOption("sslEnabled")));
+        argMap.put("postRequestValidation", String.valueOf(cmd.hasOption("postRequestValidation")));
 
         return argMap;
     }
