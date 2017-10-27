@@ -3,6 +3,7 @@
 
 package com.yahoo.http.performance.validation;
 
+import com.yahoo.http.performance.request.Request;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 /**
@@ -14,7 +15,7 @@ public class ResponseCodeValidation extends Validation {
     }
 
     @Override
-    public boolean isValid(final CloseableHttpResponse response) {
+    public boolean isValid(final Request request, final CloseableHttpResponse response) {
         return response.getStatusLine().getStatusCode() == 200;
     }
 }

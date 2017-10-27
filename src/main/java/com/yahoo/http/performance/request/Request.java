@@ -15,10 +15,20 @@ public abstract class Request {
     protected RequestType requestType;
     protected String url;
 
+    private String expectedResponseData;
+
     public Request(RequestType type, String url) {
         this.requestType = type;
         this.url = url;
     }
 
     public abstract CloseableHttpResponse makeRequest(CloseableHttpClient httpClient) throws IOException;
+
+    public String getExpectedResponseData() {
+        return expectedResponseData;
+    }
+
+    public void setExpectedResponseData(String expectedResponseData) {
+        this.expectedResponseData = expectedResponseData;
+    }
 }
