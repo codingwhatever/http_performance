@@ -9,16 +9,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 /**
  * Super class for all Validations.
  */
-public abstract class Validation {
-    private String name;
-
-    public Validation(String name) {
-        this.name = name;
-    }
-
+public interface Validation {
     public abstract boolean isValid(Request request, CloseableHttpResponse response);
-
-    public String getName() {
-        return name;
-    }
 }
