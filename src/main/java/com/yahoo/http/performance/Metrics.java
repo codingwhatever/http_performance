@@ -3,13 +3,20 @@
 
 package com.yahoo.http.performance;
 
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import lombok.Getter;
-
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import lombok.Getter;
+
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 /**
  * Class for calculating test metrics.
@@ -38,7 +45,7 @@ public class Metrics {
     @Getter
     private double latencyStandardDeviation;
     @Getter
-    private Map<String, Double> percentiles;
+    private Map<Integer, Double> percentiles;
 
     public Metrics(List<ClientThread> threads) {
         DescriptiveStatistics statistics = new DescriptiveStatistics();
@@ -66,13 +73,10 @@ public class Metrics {
         avgRequestLatency = statistics.getMean();
         latencyStandardDeviation = statistics.getStandardDeviation();
 
-        percentiles = new HashMap<String, Double>();
-        for (double percentile = 10; percentile < 100; percentile+=10) {
-            percentiles.put(String.valueOf(percentile), statistics.getPercentile(percentile));
-        }
-        for (double percentile = 91; percentile < 100; percentile++) {
-            percentiles.put(String.valueOf(percentile), statistics.getPercentile(percentile));
-        }
+        percentiles = Stream.of(IntStream.rangeClosed(1, 9).map(x -> 10 * x), IntStream.range(91, 100))
+                .flatMapToInt(x -> x)
+                .mapToObj(p -> new AbstractMap.SimpleEntry<>(p, statistics.getPercentile(Double.valueOf(p))))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Override
@@ -100,5 +104,8 @@ public class Metrics {
         return sb.toString();
     }
 
-    
+    public String toJsonString() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+        return gson.toJson(this);
+    }
 }
