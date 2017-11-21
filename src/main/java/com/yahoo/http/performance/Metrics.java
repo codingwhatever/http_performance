@@ -5,22 +5,43 @@ package com.yahoo.http.performance;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
+import lombok.Getter;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class for calculating test metrics.
  */
 public class Metrics {
+    @Getter
     private long threadCount;
+    @Getter
     private long totalRequestCount;
+    @Getter
     private long requestCountPerThread;
+    @Getter
     private long totalTestTime;
+    @Getter
     private long totalFailedRequests;
+    @Getter
     private long requestsPerSecond;
+    @Getter
     private long requestDelay;
-    private DescriptiveStatistics statistics = new DescriptiveStatistics();
+    @Getter
+    private double minRequestLatency;
+    @Getter
+    private double maxRequestLatency;
+    @Getter
+    private double avgRequestLatency;
+    @Getter
+    private double latencyStandardDeviation;
+    @Getter
+    private Map<String, Double> percentiles;
 
     public Metrics(List<ClientThread> threads) {
+        DescriptiveStatistics statistics = new DescriptiveStatistics();
         ClientThread firstThread = threads.get(0);
         this.threadCount = threads.size();
         this.requestCountPerThread = firstThread.getRequestCount();
@@ -37,8 +58,21 @@ public class Metrics {
             }
         }
 
-        long testTimeInSeconds = (totalTestTime / 1000);
-        this.requestsPerSecond = totalRequestCount / (testTimeInSeconds == 0 ? 1 : testTimeInSeconds);
+        double testTimeInSeconds = (totalTestTime / 1000);
+        this.requestsPerSecond = (long) (totalRequestCount / (testTimeInSeconds == 0.0 ? 1.0 : testTimeInSeconds));
+
+        minRequestLatency = statistics.getMin();
+        maxRequestLatency = statistics.getMax();
+        avgRequestLatency = statistics.getMean();
+        latencyStandardDeviation = statistics.getStandardDeviation();
+
+        percentiles = new HashMap<String, Double>();
+        for (double percentile = 10; percentile < 100; percentile+=10) {
+            percentiles.put(String.valueOf(percentile), statistics.getPercentile(percentile));
+        }
+        for (double percentile = 91; percentile < 100; percentile++) {
+            percentiles.put(String.valueOf(percentile), statistics.getPercentile(percentile));
+        }
     }
 
     @Override
@@ -49,44 +83,22 @@ public class Metrics {
         sb.append("\nTotal Request Count: " + totalRequestCount);
         sb.append("\nRequest Count Per Thread: " + requestCountPerThread);
         sb.append("\nTotal Test Time (milli): " + totalTestTime);
-        sb.append("\nRequest delay (milli): " + requestDelay);
+        sb.append("\nRequest delay (nano): " + requestDelay);
         sb.append("\nTotal Failed Requests: " + totalFailedRequests);
         sb.append("\nRequests Per Second: " + requestsPerSecond + "\n");
-        sb.append("\nLatency Metrics in nanoseconds:\n");
-        sb.append("\nAverage Request Latency: " + statistics.getMean());
-        sb.append("\nMin Request Latency: " + statistics.getMin());
-        sb.append("\nMax Request Latency: " + statistics.getMax());
-        sb.append("\nLatency Standard Deviation: " + statistics.getStandardDeviation());
+        sb.append("\nLatency Metrics in nanoseconds:");
+        sb.append("\nAverage Request Latency: " + avgRequestLatency);
+        sb.append("\nMin Request Latency: " + minRequestLatency);
+        sb.append("\nMax Request Latency: " + maxRequestLatency);
+        sb.append("\nLatency Standard Deviation: " + latencyStandardDeviation);
         for (double percentile = 10; percentile < 100; percentile+=10) {
-            sb.append("\nLatency percentile " + percentile + "%: " + statistics.getPercentile(percentile));
+            sb.append("\nLatency percentile " + percentile + "%: " + percentiles.get(String.valueOf(percentile)));
         }
         for (double percentile = 91; percentile < 100; percentile++) {
-            sb.append("\nLatency percentile " + percentile + "%: " + statistics.getPercentile(percentile));
+            sb.append("\nLatency percentile " + percentile + "%: " + percentiles.get(String.valueOf(percentile)));
         }
         return sb.toString();
     }
 
-    public long getThreadCount() {
-        return threadCount;
-    }
-
-    public long getTotalRequestCount() {
-        return totalRequestCount;
-    }
-
-    public long getRequestCountPerThread() {
-        return requestCountPerThread;
-    }
-
-    public long getTotalTestTime() {
-        return totalTestTime;
-    }
-
-    public long getTotalFailedRequests() {
-        return totalFailedRequests;
-    }
-
-    public long getRequestsPerSecond() {
-        return requestsPerSecond;
-    }
+    
 }
