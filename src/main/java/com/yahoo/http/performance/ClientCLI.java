@@ -86,7 +86,7 @@ public class ClientCLI {
 
         String outputType = argMap.get("outputType");
         String output = null;
-        if (outputType.equals("json")) {
+        if (outputType != null && outputType.equals("json")) {
             output = metrics.toJsonString();
         } else {
             output = metrics.toString();
