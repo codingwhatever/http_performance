@@ -75,7 +75,7 @@ public class Metrics {
 
         percentiles = Stream.of(IntStream.rangeClosed(1, 9).map(x -> 10 * x), IntStream.range(91, 100))
                 .flatMapToInt(x -> x)
-                .mapToObj(p -> new AbstractMap.SimpleEntry<>(p, statistics.getPercentile(Double.valueOf(p))))
+                .mapToObj(p -> new AbstractMap.SimpleEntry<>(p, statistics.getPercentile(p)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -95,11 +95,11 @@ public class Metrics {
         sb.append("\nMin Request Latency: " + minRequestLatency);
         sb.append("\nMax Request Latency: " + maxRequestLatency);
         sb.append("\nLatency Standard Deviation: " + latencyStandardDeviation);
-        for (double percentile = 10; percentile < 100; percentile+=10) {
-            sb.append("\nLatency percentile " + percentile + "%: " + percentiles.get(String.valueOf(percentile)));
+        for (int percentile = 10; percentile < 100; percentile+=10) {
+            sb.append("\nLatency percentile " + percentile + "%: " + percentiles.get(percentile));
         }
-        for (double percentile = 91; percentile < 100; percentile++) {
-            sb.append("\nLatency percentile " + percentile + "%: " + percentiles.get(String.valueOf(percentile)));
+        for (int percentile = 91; percentile < 100; percentile++) {
+            sb.append("\nLatency percentile " + percentile + "%: " + percentiles.get(percentile));
         }
         return sb.toString();
     }
