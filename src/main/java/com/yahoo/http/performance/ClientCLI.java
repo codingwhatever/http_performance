@@ -18,6 +18,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -83,7 +84,20 @@ public class ClientCLI {
 
         Metrics metrics = new Metrics(clientThreads);
 
-        System.out.print(metrics.toString());
+        String outputType = argMap.get("outputType");
+        String output = null;
+        if (outputType != null && outputType.equals("json")) {
+            output = metrics.toJsonString();
+        } else {
+            output = metrics.toString();
+        }
+
+        String outputFile = argMap.get("outputFile");
+        if (outputFile != null) {
+            FileUtils.writeStringToFile(new File(outputFile), output);
+        }
+
+        System.out.print(output);
     }
 
     private static List<Request> getRequests(Map<String, String> argMap) throws IOException {
@@ -159,6 +173,9 @@ public class ClientCLI {
                 "instead of sleep inorder to allow smaller delays than 1ms.");
         Option sslEnabled = new Option("s", "sslEnabled", false, "Enables ssl support with a truststrategy that returns true instead " +
                 "of verifying the certificate.");
+        Option outputType = new Option("o", "outputType", true, "Possible values: \'json\' or \'readable\'");
+        Option outputFile = new Option("f", "outputFile", true, "Path to file.");
+
 
         numThreads.setRequired(true);
         numRequests.setRequired(true);
@@ -176,7 +193,8 @@ public class ClientCLI {
         options.addOption(requestDelay);
         options.addOption(sslEnabled);
         options.addOption(postRequestValidation);
-
+        options.addOption(outputType);
+        options.addOption(outputFile);
 
         CommandLineParser parser = new BasicParser();
         HelpFormatter helpFormatter = new HelpFormatter();
@@ -201,6 +219,8 @@ public class ClientCLI {
         argMap.put("requestDelay", cmd.getOptionValue("requestDelay"));
         argMap.put("sslEnabled", String.valueOf(cmd.hasOption("sslEnabled")));
         argMap.put("postRequestValidation", String.valueOf(cmd.hasOption("postRequestValidation")));
+        argMap.put("outputType", cmd.getOptionValue("outputType"));
+        argMap.put("outputFile", cmd.getOptionValue("outputFile"));
 
         return argMap;
     }
